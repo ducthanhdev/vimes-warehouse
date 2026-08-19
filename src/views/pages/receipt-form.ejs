@@ -1,0 +1,337 @@
+<%- include('../partials/header') %>
+
+<div class="page-container">
+  <div class="form-action-bar no-print">
+    <div class="action-left">
+      <a href="/" class="btn btn-outline">
+        <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+      </a>
+      <span class="form-mode-badge">
+        <%= isEdit ? ('✏️ Chế độ chỉnh sửa phiếu #' + receipt.receipt_number) : '✨ Lập phiếu nhập kho mới (Mẫu 01-VT)' %>
+      </span>
+    </div>
+    <div class="action-right">
+      <button type="button" class="btn btn-secondary" onclick="window.print()">
+        <i class="fa-solid fa-print"></i> In biểu mẫu
+      </button>
+      <button type="button" class="btn btn-primary btn-save" onclick="handleFormSubmit()">
+        <i class="fa-solid fa-floppy-disk"></i> <%= isEdit ? 'Lưu Thay Đổi' : 'Lưu Phiếu Nhập Kho' %>
+      </button>
+    </div>
+  </div>
+
+  <div class="receipt-document-container">
+    <form id="receiptForm" class="receipt-form-doc" onsubmit="event.preventDefault(); handleFormSubmit();">
+      <% if (isEdit && receipt) { %>
+        <input type="hidden" id="receipt_id" value="<%= receipt.id %>">
+      <% } %>
+
+      <div class="doc-header-grid">
+        <div class="doc-company-info">
+          <div class="form-group-inline">
+            <label for="company_name">Đơn vị:</label>
+            <input
+              type="text"
+              id="company_name"
+              name="company_name"
+              class="doc-input screen-only"
+              placeholder="VD: Công ty Cổ phần Công nghệ VIMES"
+              value="<%= isEdit && receipt ? (receipt.company_name || '') : 'Công ty Cổ phần Công nghệ VIMES' %>"
+            />
+            <span class="print-only font-bold" id="print_company_name"><%= isEdit && receipt ? (receipt.company_name || '....................................................') : 'Công ty Cổ phần Công nghệ VIMES' %></span>
+          </div>
+          <div class="form-group-inline">
+            <label for="department">Bộ phận:</label>
+            <input
+              type="text"
+              id="department"
+              name="department"
+              class="doc-input screen-only"
+              placeholder="VD: Phòng Kế hoạch & Vật tư"
+              value="<%= isEdit && receipt ? (receipt.department || '') : 'Phòng Quản lý Kho & Vật tư' %>"
+            />
+            <span class="print-only" id="print_department"><%= isEdit && receipt ? (receipt.department || '....................................................') : 'Phòng Quản lý Kho & Vật tư' %></span>
+          </div>
+        </div>
+
+        <div class="doc-standard-badge">
+          <p class="standard-title"><strong>Mẫu số 01 - VT</strong></p>
+          <p class="standard-sub">(Ban hành theo Thông tư số 200/2014/TT-BTC</p>
+          <p class="standard-sub">Ngày 22/12/2014 của Bộ Tài chính)</p>
+        </div>
+      </div>
+
+      <div class="doc-title-section">
+        <h1 class="doc-title">PHIẾU NHẬP KHO</h1>
+        <div class="doc-date-line">
+          <label for="receipt_date" class="screen-only">Ngày lập phiếu:</label>
+          <input
+            type="date"
+            id="receipt_date"
+            name="receipt_date"
+            class="doc-input date-input screen-only"
+            required
+            value="<%= isEdit && receipt ? (typeof receipt.receipt_date === 'string' ? receipt.receipt_date.slice(0, 10) : new Date(receipt.receipt_date).toISOString().slice(0, 10)) : today %>"
+          />
+          <span class="print-only font-italic">
+            Ngày <span id="print_header_day">......</span> tháng <span id="print_header_month">......</span> năm <span id="print_header_year">2026</span>
+          </span>
+        </div>
+      </div>
+
+      <div class="doc-meta-bar">
+        <div class="meta-item">
+          <label>Số:</label>
+          <input
+            type="text"
+            id="receipt_number"
+            class="doc-input font-mono font-bold screen-only"
+            readonly
+            placeholder="[Tự động sinh khi lưu]"
+            value="<%= isEdit && receipt ? receipt.receipt_number : '' %>"
+          />
+          <span class="print-only font-mono font-bold" id="print_receipt_number"><%= isEdit && receipt ? receipt.receipt_number : '................' %></span>
+        </div>
+
+        <div class="meta-item-accounts">
+          <div class="account-field">
+            <label for="debit_account">Nợ:</label>
+            <input
+              type="text"
+              id="debit_account"
+              name="debit_account"
+              class="doc-input font-mono screen-only"
+              placeholder="VD: 152"
+              value="<%= isEdit && receipt ? (receipt.debit_account || '') : '152' %>"
+            />
+            <span class="print-only font-mono" id="print_debit_account"><%= isEdit && receipt && receipt.debit_account ? receipt.debit_account : '152' %></span>
+          </div>
+          <div class="account-field">
+            <label for="credit_account">Có:</label>
+            <input
+              type="text"
+              id="credit_account"
+              name="credit_account"
+              class="doc-input font-mono screen-only"
+              placeholder="VD: 331"
+              value="<%= isEdit && receipt ? (receipt.credit_account || '') : '331' %>"
+            />
+            <span class="print-only font-mono" id="print_credit_account"><%= isEdit && receipt && receipt.credit_account ? receipt.credit_account : '331' %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-info-list">
+        <div class="info-row">
+          <span class="info-label">- Họ và tên người giao:</span>
+          <input
+            type="text"
+            id="deliverer_name"
+            name="deliverer_name"
+            class="doc-input flex-1 font-bold screen-only"
+            placeholder="Nhập họ và tên người giao hàng..."
+            required
+            value="<%= isEdit && receipt ? receipt.deliverer_name : '' %>"
+          />
+          <span class="print-only font-bold flex-1" id="print_deliverer_name"><%= isEdit && receipt && receipt.deliverer_name ? receipt.deliverer_name : '....................................................................................' %></span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">- Theo:</span>
+          <input
+            type="text"
+            id="ref_document"
+            name="ref_document"
+            class="doc-input flex-1 screen-only"
+            placeholder="VD: Hóa đơn GTGT số 0001234 ngày 15/08/2026 của Công ty TNHH Thép Việt"
+            value="<%= isEdit && receipt ? (receipt.ref_document || '') : '' %>"
+          />
+          <span class="print-only flex-1" id="print_ref_document"><%= isEdit && receipt && receipt.ref_document ? receipt.ref_document : '....................................................................................................' %></span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">- Nhập tại kho:</span>
+          <select id="warehouse_id" name="warehouse_id" class="doc-input flex-1 screen-only" required onchange="handleWarehouseChange(this)">
+            <option value="">-- Vui lòng chọn kho nhập --</option>
+            <% if (typeof warehouses !== 'undefined') { %>
+              <% warehouses.forEach(function(w) { %>
+                <option
+                  value="<%= w.id %>"
+                  data-address="<%= w.address || '' %>"
+                  <%= isEdit && receipt && receipt.warehouse_id === w.id ? 'selected' : '' %>
+                >
+                  <%= w.code %> - <%= w.name %>
+                </option>
+              <% }); %>
+            <% } %>
+          </select>
+          <span class="print-only font-bold flex-1" id="print_warehouse_name"><%= isEdit && receipt && receipt.warehouse ? (receipt.warehouse.code + ' - ' + receipt.warehouse.name) : '....................................................' %></span>
+
+          <span class="info-label ml-2">địa điểm:</span>
+          <input
+            type="text"
+            id="warehouse_address"
+            class="doc-input flex-1 screen-only"
+            readonly
+            placeholder="Địa điểm kho tự động điền"
+            value="<%= isEdit && receipt && receipt.warehouse ? (receipt.warehouse.address || '') : '' %>"
+          />
+          <span class="print-only flex-1" id="print_warehouse_address"><%= isEdit && receipt && receipt.warehouse ? (receipt.warehouse.address || '....................................................') : '....................................................' %></span>
+        </div>
+      </div>
+
+      <div class="doc-table-section">
+        <table class="receipt-vt-table" id="detailsTable">
+          <thead>
+            <tr>
+              <th rowspan="2" class="col-stt">STT</th>
+              <th rowspan="2" class="col-name">Tên, nhãn hiệu, quy cách, phẩm chất vật tư, dụng cụ, sản phẩm, hàng hoá</th>
+              <th rowspan="2" class="col-code">Mã số</th>
+              <th rowspan="2" class="col-unit">Đơn vị tính</th>
+              <th colspan="2" class="col-qty">Số lượng</th>
+              <th rowspan="2" class="col-price">Đơn giá (₫)</th>
+              <th rowspan="2" class="col-total">Thành tiền (₫)</th>
+              <th rowspan="2" class="col-action no-print" style="width: 40px;">Xóa</th>
+            </tr>
+            <tr>
+              <th class="col-qty-doc">Theo chứng từ</th>
+              <th class="col-qty-act">Thực nhập</th>
+            </tr>
+            <tr class="col-letters-row">
+              <th class="font-normal text-muted">A</th>
+              <th class="font-normal text-muted">B</th>
+              <th class="font-normal text-muted">C</th>
+              <th class="font-normal text-muted">D</th>
+              <th class="font-normal text-muted">1</th>
+              <th class="font-normal text-muted">2</th>
+              <th class="font-normal text-muted">3</th>
+              <th class="font-normal text-muted">4</th>
+              <th class="no-print"></th>
+            </tr>
+          </thead>
+          <tbody id="detailsTableBody">
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4" class="text-center font-bold">Cộng</td>
+              <td class="text-center font-mono">X</td>
+              <td class="text-center font-mono">X</td>
+              <td class="text-center font-mono">X</td>
+              <td id="grandTotalCell" class="text-right font-mono font-bold amount-cell">0 ₫</td>
+              <td class="no-print"></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div class="table-toolbar no-print">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="addNewDetailRow()">
+            <i class="fa-solid fa-plus"></i> Thêm Dòng Hàng Hóa
+          </button>
+          <span class="text-muted text-sm ml-2">Gõ tên hoặc mã hàng ở cột B để tìm nhanh sản phẩm</span>
+        </div>
+      </div>
+
+      <div class="doc-footer-summary">
+        <div class="info-row">
+          <span class="info-label">- Tổng số tiền (viết bằng chữ):</span>
+          <span id="amountInWordsText" class="amount-words font-italic font-bold">Không đồng</span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">- Số chứng từ gốc kèm theo:</span>
+          <input
+            type="number"
+            id="attached_documents"
+            name="attached_documents"
+            min="0"
+            class="doc-input w-20 text-center font-mono font-bold"
+            value="<%= isEdit && receipt ? (receipt.attached_documents || 0) : 0 %>"
+          />
+          <span class="ml-1">chứng từ</span>
+        </div>
+      </div>
+
+      <div class="doc-signatures-section">
+        <div class="signature-date-line">
+          Ngày <span id="sig_day">......</span> tháng <span id="sig_month">......</span> năm <span id="sig_year">2026</span>
+        </div>
+
+        <div class="signatures-grid">
+          <div class="signature-block">
+            <div class="sig-title">Người lập phiếu</div>
+            <div class="sig-subtitle">(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <input
+              type="text"
+              id="creator_name"
+              name="creator_name"
+              class="doc-input sig-name-input"
+              placeholder="Họ và tên..."
+              value="<%= isEdit && receipt ? (receipt.creator_name || '') : 'Nguyễn Văn Lập' %>"
+            />
+          </div>
+
+          <div class="signature-block">
+            <div class="sig-title">Người giao hàng</div>
+            <div class="sig-subtitle">(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <input
+              type="text"
+              id="deliverer_signer"
+              name="deliverer_signer"
+              class="doc-input sig-name-input"
+              placeholder="Họ và tên..."
+              value="<%= isEdit && receipt ? (receipt.deliverer_signer || '') : '' %>"
+            />
+          </div>
+
+          <div class="signature-block">
+            <div class="sig-title">Thủ kho</div>
+            <div class="sig-subtitle">(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <input
+              type="text"
+              id="storekeeper_name"
+              name="storekeeper_name"
+              class="doc-input sig-name-input"
+              placeholder="Họ và tên..."
+              value="<%= isEdit && receipt ? (receipt.storekeeper_name || '') : 'Trần Thủ Kho' %>"
+            />
+          </div>
+
+          <div class="signature-block">
+            <div class="sig-title">Kế toán trưởng</div>
+            <div class="sig-subtitle">(Hoặc bộ phận có nhu cầu nhập)<br>(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <input
+              type="text"
+              id="accountant_name"
+              name="accountant_name"
+              class="doc-input sig-name-input"
+              placeholder="Họ và tên..."
+              value="<%= isEdit && receipt ? (receipt.accountant_name || '') : 'Lê Kế Toán' %>"
+            />
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script id="initial-receipt-details" type="application/json">
+  <%- isEdit && receipt && receipt.details ? JSON.stringify(receipt.details) : '[]' %>
+</script>
+<script>
+  window.INITIAL_RECEIPT_DETAILS = (() => {
+    try {
+      const dataEl = document.getElementById('initial-receipt-details');
+      return dataEl ? JSON.parse(dataEl.textContent || '[]') : [];
+    } catch (e) {
+      console.error('Failed to parse initial receipt details', e);
+      return [];
+    }
+  })();
+</script>
+
+<script src="/js/receipt-form.js"></script>
+<%- include('../partials/footer') %>

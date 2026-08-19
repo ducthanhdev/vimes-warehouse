@@ -1,0 +1,198 @@
+<%- include('../partials/header') %>
+
+<div class="page-container">
+  <div class="form-action-bar no-print">
+    <div class="action-left">
+      <a href="/" class="btn btn-outline">
+        <i class="fa-solid fa-arrow-left"></i> Quay lại danh sách
+      </a>
+      <span class="status-badge <%= receipt.status === 'confirmed' ? 'status-confirmed' : (receipt.status === 'cancelled' ? 'status-cancelled' : 'status-draft') %>">
+        <i class="fa-solid fa-circle-dot"></i> <%= receipt.status === 'confirmed' ? 'Đã xác nhận' : (receipt.status === 'cancelled' ? 'Đã hủy' : 'Phiếu nháp') %>
+      </span>
+    </div>
+    <div class="action-right">
+      <button type="button" class="btn btn-primary" onclick="window.print()">
+        <i class="fa-solid fa-print"></i> In Phiếu Nhập Kho (01-VT)
+      </button>
+      <% if (receipt.status === 'draft') { %>
+        <a href="/receipts/<%= receipt.id %>/edit" class="btn btn-secondary">
+          <i class="fa-solid fa-pen-to-square"></i> Chỉnh sửa
+        </a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="receipt-document-container print-sheet">
+    <div class="receipt-form-doc print-view">
+
+      <div class="doc-header-grid">
+        <div class="doc-company-info">
+          <p><strong>Đơn vị:</strong> <%= receipt.company_name || 'Công ty Cổ phần Công nghệ VIMES' %></p>
+          <p><strong>Bộ phận:</strong> <%= receipt.department || 'Phòng Quản lý Kho & Vật tư' %></p>
+        </div>
+
+        <div class="doc-standard-badge">
+          <p class="standard-title"><strong>Mẫu số 01 - VT</strong></p>
+          <p class="standard-sub">(Ban hành theo Thông tư số 200/2014/TT-BTC</p>
+          <p class="standard-sub">Ngày 22/12/2014 của Bộ Tài chính)</p>
+        </div>
+      </div>
+
+      <div class="doc-title-section">
+        <h1 class="doc-title">PHIẾU NHẬP KHO</h1>
+        <%
+          const rDate = new Date(receipt.receipt_date);
+          const day = String(rDate.getDate()).padStart(2, '0');
+          const month = String(rDate.getMonth() + 1).padStart(2, '0');
+          const year = rDate.getFullYear();
+        %>
+        <p class="doc-date-display font-italic">
+          Ngày <%= day %> tháng <%= month %> năm <%= year %>
+        </p>
+      </div>
+
+      <div class="doc-meta-bar">
+        <div class="meta-item">
+          <strong>Số:</strong> <span class="font-mono font-bold"><%= receipt.receipt_number %></span>
+        </div>
+
+        <div class="meta-item-accounts">
+          <div class="account-field">
+            <strong>Nợ:</strong> <span class="font-mono"><%= receipt.debit_account || '......' %></span>
+          </div>
+          <div class="account-field">
+            <strong>Có:</strong> <span class="font-mono"><%= receipt.credit_account || '......' %></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="doc-info-list">
+        <div class="info-row">
+          <span class="info-label">- Họ và tên người giao:</span>
+          <span class="info-value font-bold"><%= receipt.deliverer_name %></span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">- Theo:</span>
+          <span class="info-value"><%= receipt.ref_document || '................................................................................' %></span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">- Nhập tại kho:</span>
+          <span class="info-value font-bold"><%= receipt.warehouse ? (receipt.warehouse.code + ' - ' + receipt.warehouse.name) : ('Kho #' + receipt.warehouse_id) %></span>
+          <span class="info-label ml-2">địa điểm:</span>
+          <span class="info-value"><%= receipt.warehouse ? (receipt.warehouse.address || 'KCN Biên Hòa, Đồng Nai') : '...' %></span>
+        </div>
+      </div>
+
+      <div class="doc-table-section">
+        <table class="receipt-vt-table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="col-stt">STT</th>
+              <th rowspan="2" class="col-name">Tên, nhãn hiệu, quy cách, phẩm chất vật tư, dụng cụ, sản phẩm, hàng hoá</th>
+              <th rowspan="2" class="col-code">Mã số</th>
+              <th rowspan="2" class="col-unit">Đơn vị tính</th>
+              <th colspan="2" class="col-qty">Số lượng</th>
+              <th rowspan="2" class="col-price">Đơn giá (₫)</th>
+              <th rowspan="2" class="col-total">Thành tiền (₫)</th>
+            </tr>
+            <tr>
+              <th class="col-qty-doc">Theo chứng từ</th>
+              <th class="col-qty-act">Thực nhập</th>
+            </tr>
+            <tr class="col-letters-row">
+              <th class="font-normal text-muted">A</th>
+              <th class="font-normal text-muted">B</th>
+              <th class="font-normal text-muted">C</th>
+              <th class="font-normal text-muted">D</th>
+              <th class="font-normal text-muted">1</th>
+              <th class="font-normal text-muted">2</th>
+              <th class="font-normal text-muted">3</th>
+              <th class="font-normal text-muted">4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (receipt.details && receipt.details.length > 0) { %>
+              <% receipt.details.forEach(function(d, index) { %>
+                <tr>
+                  <td class="text-center font-mono"><%= d.line_number || index + 1 %></td>
+                  <td class="text-left"><%= d.product_name %></td>
+                  <td class="text-center font-mono"><%= d.product_code || '-' %></td>
+                  <td class="text-center"><%= d.unit %></td>
+                  <td class="text-right font-mono"><%= Number(d.quantity_document).toLocaleString('vi-VN') %></td>
+                  <td class="text-right font-mono font-bold"><%= Number(d.quantity_actual).toLocaleString('vi-VN') %></td>
+                  <td class="text-right font-mono"><%= Number(d.unit_price).toLocaleString('vi-VN') %></td>
+                  <td class="text-right font-mono font-bold"><%= Number(d.total_price || (d.quantity_actual * d.unit_price)).toLocaleString('vi-VN') %></td>
+                </tr>
+              <% }); %>
+            <% } %>
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td colspan="4" class="text-center font-bold">Cộng</td>
+              <td class="text-center font-mono">X</td>
+              <td class="text-center font-mono">X</td>
+              <td class="text-center font-mono">X</td>
+              <td class="text-right font-mono font-bold amount-cell">
+                <%= Number(receipt.total_amount || 0).toLocaleString('vi-VN') %> ₫
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="doc-footer-summary">
+        <div class="info-row">
+          <span class="info-label">- Tổng số tiền (viết bằng chữ):</span>
+          <span class="amount-words font-italic font-bold"><%= receipt.total_amount_text || 'Không đồng' %></span>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">- Số chứng từ gốc kèm theo:</span>
+          <span class="font-mono font-bold"><%= receipt.attached_documents || 0 %></span>
+          <span class="ml-1">chứng từ</span>
+        </div>
+      </div>
+
+      <div class="doc-signatures-section">
+        <div class="signature-date-line font-italic">
+          Ngày <%= day %> tháng <%= month %> năm <%= year %>
+        </div>
+
+        <div class="signatures-grid">
+          <div class="signature-block">
+            <div class="sig-title">Người lập phiếu</div>
+            <div class="sig-subtitle">(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name"><%= receipt.creator_name || '........................' %></div>
+          </div>
+
+          <div class="signature-block">
+            <div class="sig-title">Người giao hàng</div>
+            <div class="sig-subtitle">(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name"><%= receipt.deliverer_signer || receipt.deliverer_name || '........................' %></div>
+          </div>
+
+          <div class="signature-block">
+            <div class="sig-title">Thủ kho</div>
+            <div class="sig-subtitle">(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name"><%= receipt.storekeeper_name || '........................' %></div>
+          </div>
+
+          <div class="signature-block">
+            <div class="sig-title">Kế toán trưởng</div>
+            <div class="sig-subtitle">(Hoặc bộ phận có nhu cầu nhập)<br>(Ký, họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name"><%= receipt.accountant_name || '........................' %></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

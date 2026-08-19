@@ -1,0 +1,332 @@
+<%- include('../partials/header') %>
+
+<div class="page-container">
+  <div class="page-header">
+    <div class="page-title-group">
+      <h1 class="page-title"><i class="fa-solid fa-file-invoice"></i> Danh Sách Phiếu Nhập Kho</h1>
+      <p class="page-subtitle">Quản lý và tra cứu các chứng từ nhập kho Mẫu 01-VT</p>
+    </div>
+    <div class="page-actions">
+      <a href="/receipts/new" class="btn btn-primary">
+        <i class="fa-solid fa-circle-plus"></i> Lập Phiếu Mới
+      </a>
+    </div>
+  </div>
+
+  <div class="card filter-card no-print">
+    <form method="GET" action="/" class="filter-form">
+      <div class="filter-grid">
+        <div class="filter-field">
+          <label for="search"><i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm</label>
+          <input
+            type="text"
+            id="search"
+            name="search"
+            placeholder="Số phiếu, người giao, đơn vị..."
+            value="<%= typeof filter !== 'undefined' && filter.search ? filter.search : '' %>"
+            class="form-control"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label for="warehouse_id"><i class="fa-solid fa-warehouse"></i> Kho nhập</label>
+          <select id="warehouse_id" name="warehouse_id" class="form-control">
+            <option value="">-- Tất cả kho --</option>
+            <% if (typeof warehouses !== 'undefined') { %>
+              <% warehouses.forEach(function(w) { %>
+                <option
+                  value="<%= w.id %>"
+                  <%= typeof filter !== 'undefined' && filter.warehouse_id == w.id ? 'selected' : '' %>
+                >
+                  <%= w.code %> - <%= w.name %>
+                </option>
+              <% }); %>
+            <% } %>
+          </select>
+        </div>
+
+        <div class="filter-field">
+          <label for="from_date"><i class="fa-regular fa-calendar"></i> Từ ngày</label>
+          <input
+            type="date"
+            id="from_date"
+            name="from_date"
+            value="<%= typeof filter !== 'undefined' && filter.from_date ? filter.from_date : '' %>"
+            class="form-control"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label for="to_date"><i class="fa-regular fa-calendar-check"></i> Đến ngày</label>
+          <input
+            type="date"
+            id="to_date"
+            name="to_date"
+            value="<%= typeof filter !== 'undefined' && filter.to_date ? filter.to_date : '' %>"
+            class="form-control"
+          />
+        </div>
+
+        <div class="filter-field">
+          <label for="status"><i class="fa-solid fa-tag"></i> Trạng thái</label>
+          <select id="status" name="status" class="form-control">
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="draft" <%= typeof filter !== 'undefined' && filter.status === 'draft' ? 'selected' : '' %>>Nháp (Draft)</option>
+            <option value="confirmed" <%= typeof filter !== 'undefined' && filter.status === 'confirmed' ? 'selected' : '' %>>Đã xác nhận</option>
+            <option value="cancelled" <%= typeof filter !== 'undefined' && filter.status === 'cancelled' ? 'selected' : '' %>>Đã hủy</option>
+          </select>
+        </div>
+
+        <div class="filter-buttons">
+          <button type="submit" class="btn btn-secondary">
+            <i class="fa-solid fa-filter"></i> Lọc
+          </button>
+          <a href="/" class="btn btn-outline" title="Xóa bộ lọc">
+            <i class="fa-solid fa-rotate-left"></i>
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card table-card">
+    <div class="table-responsive">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 50px;">#</th>
+            <th style="width: 150px;">Số Phiếu</th>
+            <th style="width: 110px;">Ngày Lập</th>
+            <th>Người Giao Hàng</th>
+            <th>Kho Nhập</th>
+            <th style="width: 90px; text-align: center;">Nợ / Có</th>
+            <th style="width: 150px; text-align: right;">Tổng Tiền (VNĐ)</th>
+            <th style="width: 130px; text-align: center;">Trạng Thái</th>
+            <th style="width: 160px; text-align: center;">Thao Tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (typeof receipts !== 'undefined' && receipts.length > 0) { %>
+            <% receipts.forEach(function(r, index) { %>
+              <tr>
+                <td class="text-muted"><%= ((pagination.page - 1) * pagination.limit) + index + 1 %></td>
+                <td>
+                  <a href="/receipts/<%= r.id %>" class="receipt-number-link">
+                    <strong><%= r.receipt_number %></strong>
+                  </a>
+                </td>
+                <td>
+                  <%= new Date(r.receipt_date).toLocaleDateString('vi-VN') %>
+                </td>
+                <td>
+                  <div class="deliverer-info">
+                    <span class="name"><strong><%= r.deliverer_name %></strong></span>
+                    <% if (r.company_name) { %>
+                      <small class="company text-muted"><%= r.company_name %></small>
+                    <% } %>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge-warehouse"><%= r.warehouse_name || ('Kho #' + r.warehouse_id) %></span>
+                </td>
+                <td class="text-center font-mono">
+                  <span class="acc-debit"><%= r.debit_account || '-' %></span> /
+                  <span class="acc-credit"><%= r.credit_account || '-' %></span>
+                </td>
+                <td class="text-right font-mono font-bold amount-cell">
+                  <%= Number(r.total_amount || 0).toLocaleString('vi-VN') %> ₫
+                </td>
+                <td class="text-center">
+                  <% if (r.status === 'confirmed') { %>
+                    <span class="status-badge status-confirmed"><i class="fa-solid fa-circle-check"></i> Đã xác nhận</span>
+                  <% } else if (r.status === 'cancelled') { %>
+                    <span class="status-badge status-cancelled"><i class="fa-solid fa-circle-xmark"></i> Đã hủy</span>
+                  <% } else { %>
+                    <span class="status-badge status-draft"><i class="fa-regular fa-clock"></i> Phiếu nháp</span>
+                  <% } %>
+                </td>
+                <td class="text-center">
+                  <div class="action-buttons">
+                    <a href="/receipts/<%= r.id %>" class="btn-icon btn-view" title="Xem & In Phiếu (01-VT)">
+                      <i class="fa-solid fa-print"></i>
+                    </a>
+                    <% if (r.status === 'draft') { %>
+                      <a href="/receipts/<%= r.id %>/edit" class="btn-icon btn-edit" title="Sửa phiếu">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                      </a>
+                      <button
+                        type="button"
+                        class="btn-icon btn-confirm"
+                        title="Xác nhận phiếu"
+                        data-id="<%= r.id %>"
+                        data-number="<%= r.receipt_number %>"
+                        onclick="confirmReceipt(this)"
+                      >
+                        <i class="fa-solid fa-check"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-icon btn-delete"
+                        title="Xóa phiếu"
+                        data-id="<%= r.id %>"
+                        data-number="<%= r.receipt_number %>"
+                        onclick="deleteReceipt(this)"
+                      >
+                        <i class="fa-solid fa-trash"></i>
+                      </button>
+                    <% } %>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="9" class="no-data-cell">
+                <div class="empty-state">
+                  <i class="fa-solid fa-folder-open empty-icon"></i>
+                  <h3>Chưa có phiếu nhập kho nào</h3>
+                  <p>Hãy tạo phiếu nhập kho đầu tiên theo mẫu 01-VT bằng cách bấm nút bên dưới.</p>
+                  <a href="/receipts/new" class="btn btn-primary mt-2">
+                    <i class="fa-solid fa-circle-plus"></i> Tạo Phiếu Nhập Kho
+                  </a>
+                </div>
+              </td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (typeof pagination !== 'undefined') { %>
+      <%
+        const currentLimit = Number(pagination.limit) || 10;
+        const currentPage = Number(pagination.page) || 1;
+        const totalPages = Number(pagination.total_pages) || 1;
+        const totalRecords = Number(pagination.total) || 0;
+        const startRecord = totalRecords === 0 ? 0 : ((currentPage - 1) * currentLimit) + 1;
+        const endRecord = Math.min(currentPage * currentLimit, totalRecords);
+      %>
+      <div class="pagination-container">
+        <div class="pagination-left">
+          <div class="pagination-info">
+            <% if (totalRecords > 0) { %>
+              Hiển thị <strong><%= startRecord %></strong> - <strong><%= endRecord %></strong> trên tổng số <strong><%= totalRecords %></strong> phiếu
+            <% } else { %>
+              Không có bản ghi nào
+            <% } %>
+          </div>
+
+          <div class="page-size-wrapper">
+            <label for="pageSizeSelect"><i class="fa-solid fa-list-ol"></i> Hiển thị:</label>
+            <select id="pageSizeSelect" class="form-control form-control-sm page-size-select" onchange="changePageSize(this.value)">
+              <option value="5" <%= currentLimit === 5 ? 'selected' : '' %>>5 / trang</option>
+              <option value="10" <%= currentLimit === 10 ? 'selected' : '' %>>10 / trang</option>
+              <option value="20" <%= currentLimit === 20 ? 'selected' : '' %>>20 / trang</option>
+              <option value="50" <%= currentLimit === 50 ? 'selected' : '' %>>50 / trang</option>
+            </select>
+          </div>
+        </div>
+
+        <% if (totalPages > 1) { %>
+          <div class="pagination-links">
+            <% if (currentPage > 1) { %>
+              <a href="?<%= new URLSearchParams({...filter, page: 1, limit: currentLimit}).toString() %>" class="page-link page-link-nav" title="Trang đầu">
+                <i class="fa-solid fa-angles-left"></i>
+              </a>
+              <a href="?<%= new URLSearchParams({...filter, page: currentPage - 1, limit: currentLimit}).toString() %>" class="page-link page-link-nav" title="Trang trước">
+                <i class="fa-solid fa-chevron-left"></i> Trước
+              </a>
+            <% } else { %>
+              <span class="page-link page-link-disabled"><i class="fa-solid fa-angles-left"></i></span>
+              <span class="page-link page-link-disabled"><i class="fa-solid fa-chevron-left"></i> Trước</span>
+            <% } %>
+
+            <% if (typeof pagesRange !== 'undefined') { %>
+              <% pagesRange.forEach(function(p) { %>
+                <% if (p === '...') { %>
+                  <span class="page-ellipsis">...</span>
+                <% } else if (p === currentPage) { %>
+                  <span class="page-link page-link-active"><%= p %></span>
+                <% } else { %>
+                  <a href="?<%= new URLSearchParams({...filter, page: p, limit: currentLimit}).toString() %>" class="page-link">
+                    <%= p %>
+                  </a>
+                <% } %>
+              <% }); %>
+            <% } %>
+
+            <% if (currentPage < totalPages) { %>
+              <a href="?<%= new URLSearchParams({...filter, page: currentPage + 1, limit: currentLimit}).toString() %>" class="page-link page-link-nav" title="Trang sau">
+                Sau <i class="fa-solid fa-chevron-right"></i>
+              </a>
+              <a href="?<%= new URLSearchParams({...filter, page: totalPages, limit: currentLimit}).toString() %>" class="page-link page-link-nav" title="Trang cuối">
+                <i class="fa-solid fa-angles-right"></i>
+              </a>
+            <% } else { %>
+              <span class="page-link page-link-disabled">Sau <i class="fa-solid fa-chevron-right"></i></span>
+              <span class="page-link page-link-disabled"><i class="fa-solid fa-angles-right"></i></span>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<script>
+  function changePageSize(newLimit) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('limit', newLimit);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  }
+</script>
+
+<script>
+  async function confirmReceipt(target, rawNumber) {
+    const id = target instanceof HTMLElement ? target.dataset.id : target;
+    const number = target instanceof HTMLElement ? target.dataset.number : rawNumber;
+
+    if (!confirm(`Bạn có chắc chắn muốn XÁC NHẬN phiếu "${number}"? Phiếu đã xác nhận sẽ không thể chỉnh sửa.`)) return;
+
+    try {
+      const res = await fetch(`/api/receipts/${id}/confirm`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert(`Phiếu ${number} đã được xác nhận thành công!`);
+        window.location.reload();
+      } else {
+        alert(data.message || 'Lỗi khi xác nhận phiếu');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối máy chủ');
+    }
+  }
+
+  async function deleteReceipt(target, rawNumber) {
+    const id = target instanceof HTMLElement ? target.dataset.id : target;
+    const number = target instanceof HTMLElement ? target.dataset.number : rawNumber;
+
+    if (!confirm(`Bạn có chắc chắn muốn XÓA phiếu "${number}"? Hành động này không thể hoàn tác.`)) return;
+
+    try {
+      const res = await fetch(`/api/receipts/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.status === 204 || res.ok) {
+        alert(`Đã xóa phiếu ${number} thành công!`);
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Lỗi khi xóa phiếu');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối máy chủ');
+    }
+  }
+</script>
+
+<%- include('../partials/footer') %>

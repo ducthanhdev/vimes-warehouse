@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Quản Lý Tồn Kho | VIMES' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <header class="app-header no-print">
+    <div class="header-container">
+      <div class="brand">
+        <a href="/" class="brand-link">
+          <div class="brand-logo">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+          <div class="brand-info">
+            <span class="brand-name">VIMES WAREHOUSE</span>
+            <span class="brand-subtitle">Hệ Thống Quản Lý Tồn Kho & Chứng Từ</span>
+          </div>
+        </a>
+      </div>
+
+      <nav class="nav-links">
+        <a href="/" class="nav-item <%= typeof title !== 'undefined' && title.includes('Danh Sách') ? 'active' : '' %>">
+          <i class="fa-solid fa-list-check"></i> Danh sách phiếu
+        </a>
+        <a href="/receipts/new" class="nav-item btn-nav-new <%= typeof title !== 'undefined' && title.includes('Lập Phiếu') ? 'active' : '' %>">
+          <i class="fa-solid fa-plus-circle"></i> Lập Phiếu Nhập Kho (01-VT)
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div id="toast-container" class="toast-container no-print"></div>
+
+  <main class="main-content">
