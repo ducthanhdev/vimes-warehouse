@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import fs from 'fs';
 import routes from './routes';
@@ -15,6 +16,19 @@ app.use(
   })
 );
 app.use(cors());
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Quá nhiều yêu cầu, vui lòng thử lại sau 15 phút',
+  },
+});
+
+app.use('/api/', apiLimiter);
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
@@ -54,3 +68,4 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 export default app;
+
